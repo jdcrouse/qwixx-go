@@ -1,10 +1,18 @@
 package board
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 )
 
-// Row represents a row of eleven cells on the Qwixx board that can either be free or crossed off.
+// scoreTable represents the scores a row receives based on the number of crossed off cells at the end of the game
+// each index corresponds to the score if that many cells are crossed off
+// index 0 means 0 crossed off cells, 1 means 1 crossed off,
+// all the way up to 12 since locking a row gives an extra cell (the lock)
+var scoreTable = []int{0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78}
+
+// Row represents a row of 11 cells on the Qwixx board that can either be free or crossed off.
 //
 // Red and Yellow rows are "ascending", their cells are numbered from 2-12 [2 3 4 5 6 7 8 9 10 11 12]
 // Green and Blue rows are "descending", their cells are numbered from 12-2 [12 11 10 9 8 7 6 5 4 3 2]
@@ -22,6 +30,15 @@ type Row interface {
 	// A row is locked for all players when any player has crossed off the rightmost cell in their row of that color.
 	// Further cells cannot be crossed off once a row is locked.
 	IsLocked() bool
+	// TODO there is a difference between a row that is locked, and a row that WAS LOCKED ON THIS BOARD
+	// the former just means the row cant be played on anymore, the latter influences the score of this row because you
+	// get to cross off an extra cell for the lock
+
+	// IsMoveValid determines if the given move is valid for this row, returning the reason as an error if it was not valid
+	IsMoveValid(cellNumber int) (ok bool, _ error)
+
+	// CalculateScore determines the score of this row based on the number of cells that are crossed off
+	CalculateScore() int
 }
 
 type rowType int
@@ -38,16 +55,16 @@ type rowImpl struct {
 }
 
 func NewRedRow() Row {
-	return newRedRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return newRedRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false)
 }
 func NewYellowRow() Row {
-	return newYellowRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return newYellowRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false)
 }
 func NewGreenRow() Row {
-	return newGreenRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return newGreenRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false)
 }
 func NewBlueRow() Row {
-	return newBlueRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return newBlueRowFromCells([]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false)
 }
 
 func (r *rowImpl) IsLocked() bool {
@@ -61,22 +78,24 @@ func (r *rowImpl) Print() string {
 		textRepresentation += printCell(cellNumber, value)
 		if idx < len(r.cells)-1 {
 			textRepresentation += " "
+		} else {
+			textRepresentation += printLockCell(value)
 		}
 	}
 	return textRepresentation
 }
 
 // cellNumberToIndex turns a cell number into the index of a slice containing the value of the row's cells
+// for ascending row [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 0->2, 1->3, ..., 10->12
+// for descending row [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2], 0->12, 1->11, ..., 10->2
 func indexToCellNumber(rowType rowType, index int) (int, error) {
 	if index < 0 || index > 10 {
-		return -1, fmt.Errorf("invalid index %v", index)
+		return -1, fmt.Errorf("invalid index: %v. must be between 0 and 10", index)
 	}
 	switch rowType {
 	case RowTypeAscending:
-		// for a row [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 0->2, 1->3, ..., 10->12
 		return index + 2, nil
 	case RowTypeDescending:
-		// for a row [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2], 0->12, 1->11, ..., 10->2
 		return 12 - index, nil
 	}
 	return -1, fmt.Errorf("invalid row type %v", rowType)
@@ -85,7 +104,12 @@ func indexToCellNumber(rowType rowType, index int) (int, error) {
 // printCell prints the given cell with its number and value like [12|X]
 // value should only be 0 or 1 and corresponds to the crossed-off state of the cell
 func printCell(cellNumber int, value int) string {
-	return fmt.Sprintf("[%v|%v]", cellNumber, valueAsText(value))
+	cellNumberText := strconv.Itoa(cellNumber)
+	return fmt.Sprintf("[%v|%v]", cellNumberText, valueAsText(value))
+}
+
+func printLockCell(value int) string {
+	return fmt.Sprintf(" [L|%v]", valueAsText(value))
 }
 
 func valueAsText(value int) string {
@@ -97,6 +121,9 @@ func valueAsText(value int) string {
 
 // MakeMove crosses off the given cell in this row, returning the new row
 func (r *rowImpl) MakeMove(cellNumber int) (ok bool, _ error) {
+	if r.locked {
+		return false, errors.New("cannot make move, row is already locked")
+	}
 	err := isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
 	if err != nil {
 		return false, err
@@ -109,6 +136,29 @@ func (r *rowImpl) MakeMove(cellNumber int) (ok bool, _ error) {
 	return true, nil
 }
 
+func (r *rowImpl) IsMoveValid(cellNumber int) (ok bool, _ error) {
+	err := isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *rowImpl) CalculateScore() int {
+	// TODO include locked row? probably should add a twelfth cell
+	crossOffCellCount := 0
+	for _, value := range r.cells {
+		if value == 1 {
+			crossOffCellCount++
+		}
+	}
+	// if the last cell is crossed off, that means this row was locked by this player so they also get to cross off the lock cell
+	if r.cells[10] == 1 {
+		crossOffCellCount++
+	}
+	return scoreTable[crossOffCellCount]
+}
+
 // isMoveValid determines if the cell of the given number for the given row and row type can be crossed off.
 // Cells can only be crossed off from left to right.
 // To cross off a cell in a row, the cell must be unoccupied and there must be no crossed off cells to its right.
@@ -117,53 +167,75 @@ func isMoveValid(cells []int, rowType rowType, isLocked bool, cellNumber int) er
 		return fmt.Errorf("row is locked")
 	}
 
-	if cellNumber < 2 || cellNumber > 12 {
-		return fmt.Errorf("cell number must be between 2 and 12")
-	}
-	index, err := cellNumberToIndex(rowType, cellNumber)
+	moveIndex, err := cellNumberToIndex(rowType, cellNumber)
 	if err != nil {
 		return err
 	}
-	if cells[index] == 1 {
+
+	// cell cannot be crossed off if it is already crossed off
+
+	if cells[moveIndex] == 1 {
 		return fmt.Errorf("cell %v is already crossed off", cellNumber)
 	}
-	for _, value := range cells[index:] {
+
+	countCrossedOff := 0
+	countCrossedOffToRightOfIndex := 0
+	for idx, value := range cells {
 		if value == 1 {
-			return fmt.Errorf("cell %v is to the left of already crossed off cells", cellNumber)
+			countCrossedOff++
+			if idx > moveIndex {
+				countCrossedOffToRightOfIndex++
+			}
 		}
 	}
+
+	// cell cannot be crossed off if there are crossed off cells to its right
+	if countCrossedOffToRightOfIndex > 0 {
+		return fmt.Errorf("cell %v is to the left of already crossed off cells", cellNumber)
+	}
+
+	// 5 other cells in row must be crossed off in order to cross off rightmost cell
+	if moveIndex == 10 && countCrossedOff < 5 {
+		return errors.New("cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row")
+	}
+
 	return nil
 }
 
 // cellNumberToIndex turns a cell number into the index of a slice containing the value of the row's cells
-// for a row [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], cell 10 would correspond to index 8
+// for a row [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 2->0, 3->1, ..., 12->10
+// for a row [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2], 12->0, 11->1, ..., 2->10
 func cellNumberToIndex(rowType rowType, cellNumber int) (int, error) {
 	if cellNumber < 2 || cellNumber > 12 {
-		return -1, fmt.Errorf("invalid cell number %v", cellNumber)
+		return -1, fmt.Errorf("invalid cell number: %v. must be between 2 and 12", cellNumber)
 	}
 	switch rowType {
 	case RowTypeAscending:
-		// for a row [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 2->0, 3->1, ..., 12->10
 		return cellNumber - 2, nil
 	case RowTypeDescending:
-		// for a row [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2], 12->0, 11->1, ..., 2->10
 		return 12 - cellNumber, nil
 	}
 	return -1, fmt.Errorf("invalid row type %v", rowType)
 }
 
-func newRedRowFromCells(cells []int) Row {
-	return newRowFromCells(RowTypeAscending, cells)
+func newRedRowFromCells(cells []int, locked bool) Row {
+	return newAscendingRowFromCells(cells, locked)
 }
-func newYellowRowFromCells(cells []int) Row {
-	return newRowFromCells(RowTypeAscending, cells)
+func newYellowRowFromCells(cells []int, locked bool) Row {
+	return newAscendingRowFromCells(cells, locked)
 }
-func newGreenRowFromCells(cells []int) Row {
-	return newRowFromCells(RowTypeDescending, cells)
+func newGreenRowFromCells(cells []int, locked bool) Row {
+	return newDescendingRowFromCells(cells, locked)
 }
-func newBlueRowFromCells(cells []int) Row {
-	return newRowFromCells(RowTypeDescending, cells)
+func newBlueRowFromCells(cells []int, locked bool) Row {
+	return newDescendingRowFromCells(cells, locked)
 }
-func newRowFromCells(rowType rowType, cells []int) Row {
-	return &rowImpl{rowType: rowType, cells: cells, locked: false}
+func newAscendingRowFromCells(cells []int, locked bool) Row {
+	return newRowFromCells(RowTypeAscending, cells, locked)
+}
+func newDescendingRowFromCells(cells []int, locked bool) Row {
+	return newRowFromCells(RowTypeDescending, cells, locked)
+}
+func newRowFromCells(rowType rowType, cells []int, locked bool) Row {
+	return &rowImpl{rowType: rowType, cells: cells, locked: locked}
 }

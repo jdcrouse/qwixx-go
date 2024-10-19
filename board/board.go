@@ -12,7 +12,10 @@ import (
 // - Green ad Blue rows are numbered in descending order from 12-2.
 type Board interface {
 	Print() string
+	IsMoveValid(move Move) (ok bool, _ error)
 	MakeMove(move Move) (ok bool, _ error)
+	LockRow(color RowColor)
+	CalculateScore() int
 }
 
 type boardImpl struct {
@@ -20,6 +23,7 @@ type boardImpl struct {
 	yellowRow Row
 	greenRow  Row
 	blueRow   Row
+	locks     map[RowColor]bool
 }
 
 func NewGameBoard() Board {
@@ -52,17 +56,40 @@ func (b *boardImpl) Print() string {
 	return textRepresentation
 }
 
+func (b *boardImpl) IsMoveValid(move Move) (ok bool, _ error) {
+	switch move.rowColor {
+	case RowColorRed:
+		return b.redRow.IsMoveValid(move.cellNumber)
+	case RowColorYellow:
+		return b.yellowRow.IsMoveValid(move.cellNumber)
+	case RowColorGreen:
+		return b.greenRow.IsMoveValid(move.cellNumber)
+	case RowColorBlue:
+		return b.blueRow.IsMoveValid(move.cellNumber)
+	default:
+		return false, fmt.Errorf("invalid move row color: %d", move.rowColor)
+	}
+}
+
 func (b *boardImpl) MakeMove(move Move) (ok bool, _ error) {
 	switch move.rowColor {
-	case Red:
+	case RowColorRed:
 		return b.redRow.MakeMove(move.cellNumber)
-	case Yellow:
+	case RowColorYellow:
 		return b.yellowRow.MakeMove(move.cellNumber)
-	case Green:
+	case RowColorGreen:
 		return b.greenRow.MakeMove(move.cellNumber)
-	case Blue:
+	case RowColorBlue:
 		return b.blueRow.MakeMove(move.cellNumber)
 	default:
 		return false, fmt.Errorf("invalid move row color: %d", move.rowColor)
 	}
+}
+
+func (b *boardImpl) LockRow(color RowColor) {
+	b.locks[color] = true
+}
+
+func (b *boardImpl) CalculateScore() int {
+	return b.redRow.CalculateScore() + b.yellowRow.CalculateScore() + b.greenRow.CalculateScore() + b.blueRow.CalculateScore()
 }
