@@ -24,7 +24,7 @@ type Row interface {
 
 	// MakeMove attempts to cross off the given cell number in this row,
 	// mutating the row with the new state if the move is valid and returning an error if the move is invalid
-	MakeMove(cellNumber int) (ok bool, err error)
+	MakeMove(cellNumber int) error
 
 	// IsLocked determines if this row is locked.
 	// A row is locked for all players when any player has crossed off the rightmost cell in their row of that color.
@@ -35,7 +35,7 @@ type Row interface {
 	// get to cross off an extra cell for the lock
 
 	// IsMoveValid determines if the given move is valid for this row, returning the reason as an error if it was not valid
-	IsMoveValid(cellNumber int) (ok bool, _ error)
+	IsMoveValid(cellNumber int) (ok bool, reason string)
 
 	// CalculateScore determines the score of this row based on the number of cells that are crossed off
 	CalculateScore() int
@@ -120,28 +120,21 @@ func valueAsText(value int) string {
 }
 
 // MakeMove crosses off the given cell in this row, returning the new row
-func (r *rowImpl) MakeMove(cellNumber int) (ok bool, _ error) {
-	if r.locked {
-		return false, errors.New("cannot make move, row is already locked")
-	}
-	err := isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
-	if err != nil {
-		return false, err
+func (r *rowImpl) MakeMove(cellNumber int) error {
+	ok, reason := isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
+	if !ok {
+		return errors.New(reason)
 	}
 	index, err := cellNumberToIndex(r.rowType, cellNumber)
 	if err != nil {
-		return false, err
+		return err
 	}
 	r.cells[index] = 1
-	return true, nil
+	return nil
 }
 
-func (r *rowImpl) IsMoveValid(cellNumber int) (ok bool, _ error) {
-	err := isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+func (r *rowImpl) IsMoveValid(cellNumber int) (ok bool, reason string) {
+	return isMoveValid(r.cells, r.rowType, r.locked, cellNumber)
 }
 
 func (r *rowImpl) CalculateScore() int {
@@ -162,20 +155,20 @@ func (r *rowImpl) CalculateScore() int {
 // isMoveValid determines if the cell of the given number for the given row and row type can be crossed off.
 // Cells can only be crossed off from left to right.
 // To cross off a cell in a row, the cell must be unoccupied and there must be no crossed off cells to its right.
-func isMoveValid(cells []int, rowType rowType, isLocked bool, cellNumber int) error {
+func isMoveValid(cells []int, rowType rowType, isLocked bool, cellNumber int) (ok bool, reason string) {
 	if isLocked {
-		return fmt.Errorf("row is locked")
+		return false, "row is locked"
 	}
 
 	moveIndex, err := cellNumberToIndex(rowType, cellNumber)
 	if err != nil {
-		return err
+		return false, err.Error()
 	}
 
 	// cell cannot be crossed off if it is already crossed off
 
 	if cells[moveIndex] == 1 {
-		return fmt.Errorf("cell %v is already crossed off", cellNumber)
+		return false, fmt.Sprintf("cell %v is already crossed off", cellNumber)
 	}
 
 	countCrossedOff := 0
@@ -191,15 +184,15 @@ func isMoveValid(cells []int, rowType rowType, isLocked bool, cellNumber int) er
 
 	// cell cannot be crossed off if there are crossed off cells to its right
 	if countCrossedOffToRightOfIndex > 0 {
-		return fmt.Errorf("cell %v is to the left of already crossed off cells", cellNumber)
+		return false, fmt.Sprintf("cell %v is to the left of already crossed off cells", cellNumber)
 	}
 
 	// 5 other cells in row must be crossed off in order to cross off rightmost cell
 	if moveIndex == 10 && countCrossedOff < 5 {
-		return errors.New("cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row")
+		return false, "cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row"
 	}
 
-	return nil
+	return true, ""
 }
 
 // cellNumberToIndex turns a cell number into the index of a slice containing the value of the row's cells

@@ -3,6 +3,7 @@ package board
 import (
 	"errors"
 	"github.com/stretchr/testify/require"
+	"qwixx/actions"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ func TestBoardImpl_MakeMove(t *testing.T) {
 	type testCase struct {
 		name                   string
 		inputGameBoard         Board
-		inputMove              Move
+		inputMove              actions.Move
 		expectedOk             bool
 		expectedErr            error
 		expectedGameBoardState Board
@@ -43,9 +44,9 @@ func TestBoardImpl_MakeMove(t *testing.T) {
 		{
 			name:           "brand new game, valid move should leave board with a cell crossed off",
 			inputGameBoard: NewGameBoard(),
-			inputMove: Move{
-				rowColor:   RowColorRed,
-				cellNumber: 3,
+			inputMove: actions.Move{
+				RowColor:   actions.RowColorRed,
+				CellNumber: 3,
 			},
 			expectedOk: true,
 			expectedGameBoardState: &boardImpl{
@@ -58,9 +59,9 @@ func TestBoardImpl_MakeMove(t *testing.T) {
 		{
 			name:           "brand new game, invalid move should leave board unchanged",
 			inputGameBoard: NewGameBoard(),
-			inputMove: Move{
-				rowColor:   RowColorRed,
-				cellNumber: 1,
+			inputMove: actions.Move{
+				RowColor:   actions.RowColorRed,
+				CellNumber: 1,
 			},
 			expectedOk:             false,
 			expectedErr:            errors.New("cell number must be between 2 and 12"),
@@ -74,9 +75,9 @@ func TestBoardImpl_MakeMove(t *testing.T) {
 				greenRow:  newGreenRowFromCells([]int{0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0}, false),
 				blueRow:   newBlueRowFromCells([]int{0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0}, false),
 			},
-			inputMove: Move{
-				rowColor:   RowColorGreen,
-				cellNumber: 4,
+			inputMove: actions.Move{
+				RowColor:   actions.RowColorGreen,
+				CellNumber: 4,
 			},
 			expectedOk: true,
 			expectedGameBoardState: &boardImpl{
@@ -94,9 +95,9 @@ func TestBoardImpl_MakeMove(t *testing.T) {
 				greenRow:  newGreenRowFromCells([]int{0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0}, false),
 				blueRow:   newBlueRowFromCells([]int{0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0}, false),
 			},
-			inputMove: Move{
-				rowColor:   RowColorGreen,
-				cellNumber: 10,
+			inputMove: actions.Move{
+				RowColor:   actions.RowColorGreen,
+				CellNumber: 10,
 			},
 			expectedOk:  false,
 			expectedErr: errors.New("cell 10 is to the left of already crossed off cells"),

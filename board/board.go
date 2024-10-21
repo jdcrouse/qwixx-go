@@ -2,6 +2,7 @@ package board
 
 import (
 	"fmt"
+	"qwixx/actions"
 )
 
 // Board represents the Qwixx board for a single player.
@@ -12,9 +13,9 @@ import (
 // - Green ad Blue rows are numbered in descending order from 12-2.
 type Board interface {
 	Print() string
-	IsMoveValid(move Move) (ok bool, _ error)
-	MakeMove(move Move) (ok bool, _ error)
-	LockRow(color RowColor)
+	IsMoveValid(move actions.Move) (ok bool, reason string)
+	MakeMove(move actions.Move) error
+	LockRow(color actions.RowColor)
 	CalculateScore() int
 }
 
@@ -23,7 +24,7 @@ type boardImpl struct {
 	yellowRow Row
 	greenRow  Row
 	blueRow   Row
-	locks     map[RowColor]bool
+	locks     map[actions.RowColor]bool
 }
 
 func NewGameBoard() Board {
@@ -56,37 +57,37 @@ func (b *boardImpl) Print() string {
 	return textRepresentation
 }
 
-func (b *boardImpl) IsMoveValid(move Move) (ok bool, _ error) {
-	switch move.rowColor {
-	case RowColorRed:
-		return b.redRow.IsMoveValid(move.cellNumber)
-	case RowColorYellow:
-		return b.yellowRow.IsMoveValid(move.cellNumber)
-	case RowColorGreen:
-		return b.greenRow.IsMoveValid(move.cellNumber)
-	case RowColorBlue:
-		return b.blueRow.IsMoveValid(move.cellNumber)
+func (b *boardImpl) IsMoveValid(move actions.Move) (ok bool, reason string) {
+	switch move.RowColor {
+	case actions.RowColorRed:
+		return b.redRow.IsMoveValid(move.CellNumber)
+	case actions.RowColorYellow:
+		return b.yellowRow.IsMoveValid(move.CellNumber)
+	case actions.RowColorGreen:
+		return b.greenRow.IsMoveValid(move.CellNumber)
+	case actions.RowColorBlue:
+		return b.blueRow.IsMoveValid(move.CellNumber)
 	default:
-		return false, fmt.Errorf("invalid move row color: %d", move.rowColor)
+		return false, fmt.Sprintf("invalid move row color: %d", move.RowColor)
 	}
 }
 
-func (b *boardImpl) MakeMove(move Move) (ok bool, _ error) {
-	switch move.rowColor {
-	case RowColorRed:
-		return b.redRow.MakeMove(move.cellNumber)
-	case RowColorYellow:
-		return b.yellowRow.MakeMove(move.cellNumber)
-	case RowColorGreen:
-		return b.greenRow.MakeMove(move.cellNumber)
-	case RowColorBlue:
-		return b.blueRow.MakeMove(move.cellNumber)
+func (b *boardImpl) MakeMove(move actions.Move) error {
+	switch move.RowColor {
+	case actions.RowColorRed:
+		return b.redRow.MakeMove(move.CellNumber)
+	case actions.RowColorYellow:
+		return b.yellowRow.MakeMove(move.CellNumber)
+	case actions.RowColorGreen:
+		return b.greenRow.MakeMove(move.CellNumber)
+	case actions.RowColorBlue:
+		return b.blueRow.MakeMove(move.CellNumber)
 	default:
-		return false, fmt.Errorf("invalid move row color: %d", move.rowColor)
+		return fmt.Errorf("invalid move row color: %d", move.RowColor)
 	}
 }
 
-func (b *boardImpl) LockRow(color RowColor) {
+func (b *boardImpl) LockRow(color actions.RowColor) {
 	b.locks[color] = true
 }
 

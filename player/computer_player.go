@@ -2,19 +2,26 @@ package player
 
 import (
 	"fmt"
+	"qwixx/actions"
 	"qwixx/board"
+	"qwixx/rule_checker"
 )
 
 var _ Player = ComputerPlayer{}
 
 type ComputerPlayer struct {
-	ID             PlayerID
-	board          board.Board
-	opponentBoards map[PlayerID]board.Board
+	name string
+	ID   PlayerID
 }
 
-func NewComputerPlayer() Player {
-	return &ComputerPlayer{}
+func NewComputerPlayer(name string) Player {
+	return &ComputerPlayer{
+		name: name,
+	}
+}
+
+func (c ComputerPlayer) GetName() string {
+	return c.name
 }
 
 func (c ComputerPlayer) InformOfID(playerID PlayerID) {
@@ -22,36 +29,47 @@ func (c ComputerPlayer) InformOfID(playerID PlayerID) {
 }
 
 func (c ComputerPlayer) InformOfPlayOrder(playerIDs []PlayerID) {
-	fmt.Printf("play order: %v", playerIDs)
-	for _, playerID := range playerIDs {
-		c.opponentBoards[playerID] = board.NewGameBoard()
-	}
 }
 
-func (c ComputerPlayer) InformOfOpponentMove(playerID PlayerID, move board.Move) {
-	fmt.Printf("player %v made move %v", playerID, move)
-	_, _ = c.opponentBoards[playerID].MakeMove(move)
+func (c ComputerPlayer) InformOfOpponentMove(playerID PlayerID, move actions.Move) {
+	fmt.Printf("player %v made move %v\n", playerID, move)
 }
 
-func (c ComputerPlayer) InformRowLocked(color board.RowColor) {
-	fmt.Printf("row %v was locked", color)
-	c.board.LockRow(color)
+func (c ComputerPlayer) InformRowLocked(color actions.RowColor) {
+	fmt.Printf("row %v was locked\n", color)
 }
 
 func (c ComputerPlayer) InformGameOver(winnerID PlayerID) {
 	if winnerID == c.ID {
-		fmt.Printf("PARTYYYY YOU WON")
+		fmt.Printf("PARTYYYY YOU WON\n")
 	} else {
-		fmt.Printf("BOO YOU LOST :( %v won the game", winnerID)
+		fmt.Printf("BOO YOU LOST :( %v won the game\n", winnerID)
 	}
 }
 
-func (c ComputerPlayer) PromptMove(diceRoll board.DiceRoll) board.Move {
-	possibleMoves := board.DeterminePossibleMoves(diceRoll)
-	for _, move := range possibleMoves {
-		if ok, _ := c.board.IsMoveValid(move); ok {
-			return move
+func (c ComputerPlayer) PromptActivePlayerMove(playerBoard board.Board, diceRoll actions.DiceRoll) (whiteDiceMove *actions.Move, colorDiceMove *actions.Move, takePenalty bool) {
+	// TODO prompt these with two separate methods instead of one?
+	possibleWhiteDiceMoves := rule_checker.DeterminePossibleWhiteDiceMoves(diceRoll)
+	for _, move := range possibleWhiteDiceMoves {
+		if ok, _ := playerBoard.IsMoveValid(move); ok {
+			whiteDiceMove = &move
+			break
 		}
 	}
-	return board.Move{} // TODO handle penalty when implemented
+	possibleColorDiceMoves := rule_checker.DeterminePossibleWhiteDiceMoves(diceRoll)
+	for _, move := range possibleColorDiceMoves {
+		if ok, _ := playerBoard.IsMoveValid(move); ok {
+			colorDiceMove = &move
+			break
+		}
+	}
+
+	if whiteDiceMove == nil && colorDiceMove == nil {
+		return whiteDiceMove, colorDiceMove, true
+	}
+	return whiteDiceMove, colorDiceMove, false
+}
+
+func (c ComputerPlayer) PromptInactivePlayerMove(playerBoard board.Board, diceRoll actions.WhiteDiceRoll) actions.Move {
+	return actions.Move{} // TODO handle
 }

@@ -1,16 +1,19 @@
 package player
 
-import "qwixx/board"
+import (
+	"qwixx/actions"
+	"qwixx/board"
+)
 
 type PlayerID string
 
 type Player interface {
+	GetName() string
 	InformOfID(playerID PlayerID)
 	InformOfPlayOrder(playerIDs []PlayerID)
-	PromptMove(diceRoll board.DiceRoll) board.Move
-	InformOfOpponentMove(playerID PlayerID, move board.Move)
-	InformRowLocked(color board.RowColor)
+	PromptActivePlayerMove(playerBoard board.Board, diceRoll actions.DiceRoll) (whiteDiceMove *actions.Move, colorDiceMove *actions.Move, takePenalty bool)
+	PromptInactivePlayerMove(playerBoard board.Board, diceRoll actions.WhiteDiceRoll) actions.Move
+	InformOfOpponentMove(playerID PlayerID, move actions.Move)
+	InformRowLocked(color actions.RowColor)
 	InformGameOver(winnerID PlayerID)
 }
-
-// TODO need penalties!! new type of move?
