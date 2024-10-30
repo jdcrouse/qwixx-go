@@ -1,10 +1,11 @@
 package rule_checker
 
 import (
-	"github.com/stretchr/testify/require"
 	"qwixx/actions"
 	"qwixx/board"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestWhiteDiceMoveIsValidForBoard(t *testing.T) {
