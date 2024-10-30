@@ -1,9 +1,10 @@
 package qwixx
 
 import (
-	"github.com/stretchr/testify/require"
 	"qwixx/player"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestAdministrator_CreateGame(t *testing.T) {
