@@ -9,11 +9,12 @@ type PlayerID string
 
 type Player interface {
 	GetName() string
-	InformOfID(playerID PlayerID)
-	InformOfPlayOrder(playerIDs []PlayerID)
-	PromptActivePlayerMove(playerBoard board.Board, diceRoll actions.DiceRoll) (whiteDiceMove *actions.Move, colorDiceMove *actions.Move, takePenalty bool)
-	PromptInactivePlayerMove(playerBoard board.Board, diceRoll actions.WhiteDiceRoll) actions.Move
+	InformOfPlayOrder(playerNames []string)
+	PromptActivePlayerTurn(playerBoard board.Board, diceRoll actions.DiceRoll) actions.ActivePlayerTurn
+	PromptInactivePlayerTurn(playerBoard board.Board, diceRoll actions.DiceRoll) actions.InactivePlayerTurn
+	InformSuccessfulTurn(updatedBoard board.Board)
 	InformOfOpponentMove(playerID PlayerID, move actions.Move)
 	InformRowLocked(color actions.RowColor)
-	InformGameOver(winnerID PlayerID)
+	InformWin()
+	InformLoss(winnerID PlayerID)
 }
