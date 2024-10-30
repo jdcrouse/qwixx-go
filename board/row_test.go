@@ -2,8 +2,9 @@ package board
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrintRow(t *testing.T) {
@@ -67,7 +68,7 @@ func TestIsMoveValid(t *testing.T) {
 		name            string
 		input           Row
 		inputCellNumber int
-		expectedErr     error
+		expectedReason  string
 	}
 	validMoveCases := []testCase{
 		{
@@ -111,69 +112,68 @@ func TestIsMoveValid(t *testing.T) {
 			name:            "invalid move: ascending row, cross off already crossed off cell",
 			input:           newValidatedAscendingRowFromCells(t, []int{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 4,
-			expectedErr:     errors.New("cell 4 is already crossed off"),
+			expectedReason:  "cell 4 is already crossed off",
 		},
 
 		{
 			name:            "invalid move: non-empty ascending row, cross off empty cell with already crossed off cells to the right",
 			input:           newValidatedAscendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 6,
-			expectedErr:     errors.New("cell 6 is to the left of already crossed off cells"),
+			expectedReason:  "cell 6 is to the left of already crossed off cells",
 		},
 
 		{
 			name:            "invalid move: ascending row, can only cross off rightmost cell if five cells are already crossed",
 			input:           newValidatedAscendingRowFromCells(t, []int{0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 12,
-			expectedErr:     errors.New("cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row"),
+			expectedReason:  "cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row",
 		},
 
 		{
 			name:            "invalid move: non-empty descending row, cross off already crossed off cell",
 			input:           newValidatedDescendingRowFromCells(t, []int{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 10,
-			expectedErr:     errors.New("cell 10 is already crossed off"),
+			expectedReason:  "cell 10 is already crossed off",
 		},
 
 		{
 			name:            "invalid move: descending row, can only cross off rightmost cell if five cells are already crossed",
 			input:           newValidatedDescendingRowFromCells(t, []int{0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 2,
-			expectedErr:     errors.New("cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row"),
+			expectedReason:  "cannot cross off rightmost cell of row unless 5 cells have been crossed off in that row",
 		},
 
 		{
 			name:            "invalid move: non-empty descending row, cross off empty cell with already crossed off cells to the right",
 			input:           newValidatedDescendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, false),
 			inputCellNumber: 8,
-			expectedErr:     errors.New("cell 8 is to the left of already crossed off cells"),
+			expectedReason:  "cell 8 is to the left of already crossed off cells",
 		},
 		{
 			name:            "invalid move: locked non-empty row regardless of actual move",
 			input:           newValidatedAscendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, true),
 			inputCellNumber: 8,
-			expectedErr:     errors.New("row is locked"),
+			expectedReason:  "row is locked",
 		},
 		{
 			name:            "invalid move: locked empty row regardless of actual move",
 			input:           newValidatedDescendingRowFromCells(t, []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, true),
 			inputCellNumber: 8,
-			expectedErr:     errors.New("row is locked"),
+			expectedReason:  "row is locked",
 		},
 	}
 	for _, tc := range validMoveCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := tc.input.IsMoveValid(tc.inputCellNumber)
-			require.NoError(t, err)
+			ok, reason := tc.input.IsMoveValid(tc.inputCellNumber)
+			require.Equal(t, "", reason)
 			require.True(t, ok)
 		})
 	}
 	for _, tc := range invalidMoveCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := tc.input.IsMoveValid(tc.inputCellNumber)
-			require.Error(t, err)
+			ok, reason := tc.input.IsMoveValid(tc.inputCellNumber)
+			require.Equal(t, tc.expectedReason, reason)
 			require.False(t, ok)
-			require.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
@@ -257,7 +257,7 @@ func TestMakeMove(t *testing.T) {
 			inputRow:        newValidatedAscendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, true),
 			inputCellNumber: 8,
 			expectedOk:      false,
-			expectedErr:     errors.New("cannot make move, row is already locked"),
+			expectedErr:     errors.New("row is locked"),
 			expectedRow:     newValidatedAscendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, true),
 		},
 		{
@@ -265,14 +265,13 @@ func TestMakeMove(t *testing.T) {
 			inputRow:        newValidatedDescendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, true),
 			inputCellNumber: 6,
 			expectedOk:      false,
-			expectedErr:     errors.New("cannot make move, row is already locked"),
+			expectedErr:     errors.New("row is locked"),
 			expectedRow:     newValidatedDescendingRowFromCells(t, []int{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}, true),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := tc.inputRow.MakeMove(tc.inputCellNumber)
-			require.Equal(t, tc.expectedOk, ok)
+			err := tc.inputRow.MakeMove(tc.inputCellNumber)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedRow, tc.inputRow)
 		})

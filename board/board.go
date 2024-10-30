@@ -13,8 +13,10 @@ import (
 // - Green ad Blue rows are numbered in descending order from 12-2.
 type Board interface {
 	Print() string
+	Copy() Board
 	IsMoveValid(move actions.Move) (ok bool, reason string)
 	MakeMove(move actions.Move) error
+	IsCellMarked(rowColor actions.RowColor, cellNumber int) bool
 	LockRow(color actions.RowColor)
 	CalculateScore() int
 }
@@ -33,6 +35,20 @@ func NewGameBoard() Board {
 		yellowRow: NewYellowRow(),
 		greenRow:  NewGreenRow(),
 		blueRow:   NewBlueRow(),
+	}
+}
+
+func (b *boardImpl) Copy() Board {
+	locksCopy := make(map[actions.RowColor]bool)
+	for k, v := range b.locks {
+		locksCopy[k] = v
+	}
+	return &boardImpl{
+		redRow:    b.redRow.Copy(),
+		yellowRow: b.redRow.Copy(),
+		greenRow:  b.redRow.Copy(),
+		blueRow:   b.redRow.Copy(),
+		locks:     locksCopy,
 	}
 }
 
@@ -93,4 +109,19 @@ func (b *boardImpl) LockRow(color actions.RowColor) {
 
 func (b *boardImpl) CalculateScore() int {
 	return b.redRow.CalculateScore() + b.yellowRow.CalculateScore() + b.greenRow.CalculateScore() + b.blueRow.CalculateScore()
+}
+
+func (b *boardImpl) IsCellMarked(rowColor actions.RowColor, cellNumber int) bool {
+	switch rowColor {
+	case actions.RowColorRed:
+		return b.redRow.IsCellMarked(cellNumber)
+	case actions.RowColorYellow:
+		return b.yellowRow.IsCellMarked(cellNumber)
+	case actions.RowColorGreen:
+		return b.greenRow.IsCellMarked(cellNumber)
+	case actions.RowColorBlue:
+		return b.blueRow.IsCellMarked(cellNumber)
+	default:
+		return false
+	}
 }
