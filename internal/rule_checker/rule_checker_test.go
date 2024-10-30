@@ -1,8 +1,8 @@
 package rule_checker
 
 import (
-	"qwixx/actions"
-	"qwixx/board"
+	"qwixx/internal/actions"
+	"qwixx/internal/board"
 	"testing"
 
 	"github.com/stretchr/testify/require"

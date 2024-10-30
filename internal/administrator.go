@@ -1,9 +1,8 @@
-package qwixx
+package internal
 
 import (
-	"qwixx/player"
-
 	"github.com/google/uuid"
+	"qwixx/internal/player"
 )
 
 type GameID string

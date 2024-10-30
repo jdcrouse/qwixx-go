@@ -2,7 +2,7 @@ package board
 
 import (
 	"fmt"
-	"qwixx/actions"
+	"qwixx/internal/actions"
 )
 
 // Board represents the Qwixx board for a single player.

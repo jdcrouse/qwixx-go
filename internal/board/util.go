@@ -1,6 +1,8 @@
 package board
 
-import "qwixx/actions"
+import (
+	"qwixx/internal/actions"
+)
 
 // ApplyActivePlayerTurn applies the given turn to the given board, applying the white dice move and then the color dice move
 // a partially applied turn that results in an error will return the error, but the given board is still updated so this should be called with a copy

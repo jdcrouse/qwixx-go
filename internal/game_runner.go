@@ -1,12 +1,12 @@
-package qwixx
+package internal
 
 import (
 	"fmt"
 	"math/rand"
-	"qwixx/actions"
-	"qwixx/board"
-	"qwixx/player"
-	"qwixx/rule_checker"
+	"qwixx/internal/actions"
+	board2 "qwixx/internal/board"
+	"qwixx/internal/player"
+	"qwixx/internal/rule_checker"
 	"strings"
 
 	"github.com/google/uuid"
@@ -18,7 +18,7 @@ type GameRunner interface {
 
 type gameRunnerImpl struct {
 	playersByID map[player.PlayerID]player.Player
-	boards      map[player.PlayerID]board.Board
+	boards      map[player.PlayerID]board2.Board
 	penalties   map[player.PlayerID]int
 	locks       map[actions.RowColor]bool
 }
@@ -74,10 +74,10 @@ func establishPlayOrder(playersByID map[player.PlayerID]player.Player) []player.
 	return playOrder
 }
 
-func initializeBoards(playOrder map[player.PlayerID]player.Player) map[player.PlayerID]board.Board {
-	boards := make(map[player.PlayerID]board.Board, len(playOrder))
+func initializeBoards(playOrder map[player.PlayerID]player.Player) map[player.PlayerID]board2.Board {
+	boards := make(map[player.PlayerID]board2.Board, len(playOrder))
 	for playerID, _ := range playOrder {
-		boards[playerID] = board.NewGameBoard()
+		boards[playerID] = board2.NewGameBoard()
 	}
 	return boards
 }
@@ -137,7 +137,7 @@ func (gr *gameRunnerImpl) runSingleTurn(currentPlayerID player.PlayerID) error {
 		printPenalty(currentPlayer.GetName(), gr.penalties[currentPlayerID])
 	} else {
 
-		updatedBoard, err := board.ApplyActivePlayerTurn(currentPlayerBoard.Copy(), activePlayerTurn)
+		updatedBoard, err := board2.ApplyActivePlayerTurn(currentPlayerBoard.Copy(), activePlayerTurn)
 		if err != nil {
 			return err
 		}
@@ -172,7 +172,7 @@ func (gr *gameRunnerImpl) runSingleTurn(currentPlayerID player.PlayerID) error {
 // the returned turn has been guaranteed to be valid for the copy of the board they were given
 func promptActivePlayerTurn(
 	currentPlayer player.Player,
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 ) actions.ActivePlayerTurn {
 	for try := 0; try < 3; try++ {
@@ -201,7 +201,7 @@ func promptActivePlayerTurn(
 // the returned turn has been guaranteed to be valid for the copy of the board they were given
 func promptInactivePlayerTurn(
 	currentPlayer player.Player,
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 ) actions.InactivePlayerTurn {
 	for try := 0; try < 3; try++ {
@@ -216,7 +216,7 @@ func promptInactivePlayerTurn(
 }
 
 func isActiveTurnValid(
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 	activePlayerTurn actions.ActivePlayerTurn,
 ) bool {
@@ -238,7 +238,7 @@ func isActiveTurnValid(
 }
 
 func isInactiveTurnValid(
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 	inactivePlayerTurn actions.InactivePlayerTurn,
 ) bool {
@@ -251,7 +251,7 @@ func isInactiveTurnValid(
 // isWhiteDiceMoveValid determines if the rulechecker says the given color dice move is valid,
 // and the given board will allow the move to be played
 func isWhiteDiceMoveValid(
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 	move actions.Move,
 ) bool {
@@ -265,7 +265,7 @@ func isWhiteDiceMoveValid(
 // isColorDiceMoveValid determines if the rulechecker says the given color dice move is valid,
 // and the given board will allow the move to be played
 func isColorDiceMoveValid(
-	playerBoard board.Board,
+	playerBoard board2.Board,
 	diceRoll actions.DiceRoll,
 	move actions.Move,
 ) bool {
@@ -300,7 +300,7 @@ func printInvalidTurn(playerName string, invalidTurnString string) {
 	fmt.Printf("player %v played an invalid turn: %v\n", playerName, invalidTurnString)
 }
 
-func printPlayerBoard(playerName string, playerBoard board.Board) {
+func printPlayerBoard(playerName string, playerBoard board2.Board) {
 	fmt.Printf("%v's board:\n", playerName)
 	fmt.Println(playerBoard.Print())
 }

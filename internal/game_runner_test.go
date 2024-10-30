@@ -1,19 +1,19 @@
-package qwixx
+package internal
 
 import (
-	"qwixx/actions"
-	"qwixx/board"
-	"qwixx/player"
+	"qwixx/internal/actions"
+	"qwixx/internal/board"
+	player2 "qwixx/internal/player"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestRunGame(t *testing.T) {
-	alice := player.NewComputerPlayer("alice")
-	bob := player.NewComputerPlayer("bob")
-	charlie := player.NewComputerPlayer("charlie")
-	players := []player.Player{alice, bob, charlie}
+	alice := player2.NewComputerPlayer("alice")
+	bob := player2.NewComputerPlayer("bob")
+	charlie := player2.NewComputerPlayer("charlie")
+	players := []player2.Player{alice, bob, charlie}
 	runner := NewGameRunner(players)
 	runner.RunGame()
 }
