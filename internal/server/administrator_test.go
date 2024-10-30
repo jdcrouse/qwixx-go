@@ -1,7 +1,7 @@
-package internal
+package server
 
 import (
-	"qwixx/internal/player"
+	"qwixx/internal/game/player"
 	"testing"
 
 	"github.com/stretchr/testify/require"

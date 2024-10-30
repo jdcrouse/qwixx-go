@@ -1,15 +1,16 @@
-package internal
+package server
 
 import (
 	"github.com/google/uuid"
-	"qwixx/internal/player"
+	"qwixx/internal/game"
+	"qwixx/internal/game/player"
 )
 
 type GameID string
 
 type Administrator struct {
 	lobbies map[GameID][]player.Player
-	runners []GameRunner
+	runners []game.GameRunner
 }
 
 func NewAdministrator() *Administrator {
@@ -30,7 +31,7 @@ func (a *Administrator) StartGame(gameID GameID) {
 	// TODO does this take the players and then remove them from the map....without deleting them altogether. need pointers maybe?
 	players := a.lobbies[gameID]
 	delete(a.lobbies, gameID)
-	runner := NewGameRunner(players)
+	runner := game.NewGameRunner(players)
 	a.runners = append(a.runners, runner)
 	go runner.RunGame()
 }
