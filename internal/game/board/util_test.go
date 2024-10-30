@@ -2,7 +2,7 @@ package board
 
 import (
 	"errors"
-	"qwixx/internal/actions"
+	"qwixx/internal/game/actions"
 	"testing"
 
 	"github.com/stretchr/testify/require"

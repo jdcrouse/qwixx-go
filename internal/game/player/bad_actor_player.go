@@ -1,8 +1,8 @@
 package player
 
 import (
-	"qwixx/internal/actions"
-	"qwixx/internal/board"
+	"qwixx/internal/game/actions"
+	"qwixx/internal/game/board"
 )
 
 var _ Player = BadActorPlayer{}

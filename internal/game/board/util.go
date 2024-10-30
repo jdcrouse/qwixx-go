@@ -1,7 +1,7 @@
 package board
 
 import (
-	"qwixx/internal/actions"
+	"qwixx/internal/game/actions"
 )
 
 // ApplyActivePlayerTurn applies the given turn to the given board, applying the white dice move and then the color dice move

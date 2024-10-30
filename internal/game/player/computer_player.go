@@ -2,9 +2,9 @@ package player
 
 import (
 	"fmt"
-	"qwixx/internal/actions"
-	"qwixx/internal/board"
-	"qwixx/internal/rule_checker"
+	"qwixx/internal/game/actions"
+	"qwixx/internal/game/board"
+	"qwixx/internal/game/rule_checker"
 )
 
 var _ Player = ComputerPlayer{}
