@@ -77,3 +77,30 @@ func RollQwixxDice() DiceRoll {
 	}
 
 }
+
+// ActivePlayerTurn represents the turn of an active player, where they can cross off a cell both with the sum of
+// the white dice and the sum of one white die with one color die
+// If both moves are nil, a penalty is taken
+type ActivePlayerTurn struct {
+	WhiteDiceMove *Move
+	ColorDiceMove *Move
+}
+
+func (apt ActivePlayerTurn) String() string {
+	whiteDiceMoveString := "nil"
+	if apt.WhiteDiceMove != nil {
+		whiteDiceMoveString = apt.WhiteDiceMove.String()
+	}
+	colorDiceMoveString := "nil"
+	if apt.ColorDiceMove != nil {
+		colorDiceMoveString = apt.ColorDiceMove.String()
+	}
+	return fmt.Sprintf("[W: %v, C: %v", whiteDiceMoveString, colorDiceMoveString)
+}
+
+// InactivePlayerTurn represents the turn of an inactive player, where they can optionally cross off a cell
+// with the sum of the white dice
+// If the move is nil, nothing happens and no penalty is taken.
+type InactivePlayerTurn struct {
+	WhiteDiceMove *Move
+}
