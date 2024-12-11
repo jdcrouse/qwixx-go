@@ -26,7 +26,6 @@ type Settings struct {
 func (s *serverImpl) Start(settings Settings) error {
 	fmt.Println("server starting")
 	http.HandleFunc("/ws", s.serveWs)
-
 	return http.ListenAndServe(settings.Endpoint, nil)
 }
 
@@ -36,6 +35,6 @@ func (s *serverImpl) serveWs(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{conn: conn, send: make(chan []byte, 256)}
+	client := &Client{conn: conn}
 	go client.handleWSConnection()
 }

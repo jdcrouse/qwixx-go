@@ -6,11 +6,7 @@ import (
 )
 
 type Client struct {
-	// The websocket connection.
 	conn *websocket.Conn
-
-	// Buffered channel of outbound messages.
-	send chan []byte
 }
 
 func (c *Client) handleWSConnection() {
